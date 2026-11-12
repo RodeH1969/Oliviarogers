@@ -16,7 +16,7 @@
     --ink: #2e4a5a;
     --mint: #6fb59b;
     --navy: #1b2a4a;
-    --brand-h: 15dvh;
+    --brand-h: 16vh;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -43,7 +43,7 @@
   .wordmark .or {
     font-family: 'Playfair Display', Georgia, serif;
     font-weight: 500;
-    font-size: clamp(40px, 9dvh, 100px);
+    font-size: clamp(36px, 7.5vh, 96px);
     line-height: 1;
     color: var(--mint);
     letter-spacing: -.06em;
@@ -52,14 +52,14 @@
   .wordmark .olivia {
     font-family: 'Playfair Display', Georgia, serif;
     font-weight: 600;
-    font-size: clamp(26px, 5.6dvh, 64px);
+    font-size: clamp(22px, 4.8vh, 60px);
     line-height: 1.05;
     color: var(--navy);
   }
   .wordmark .ortho {
     font-family: 'Poppins', system-ui, sans-serif;
     font-weight: 500;
-    font-size: clamp(11px, 2.2dvh, 24px);
+    font-size: clamp(10px, 1.9vh, 22px);
     letter-spacing: .3em;
     color: var(--navy);
     margin-top: .4vmin;
@@ -70,7 +70,7 @@
   .place {
     font-family: 'Poppins', system-ui, sans-serif;
     font-weight: 400;
-    font-size: clamp(18px, 4dvh, 48px);
+    font-size: clamp(16px, 3.4vh, 44px);
     letter-spacing: .12em;
     text-transform: uppercase;
     color: var(--ink);
@@ -96,6 +96,7 @@
   .text {
     display: flex; flex-direction: column; justify-content: center;
     padding: 6vmin 5vw 6vmin 6vw;
+    min-height: 0; overflow: hidden;
   }
   .kicker {
     font-family: 'Poppins', system-ui, sans-serif;
@@ -127,12 +128,16 @@
 
   /* portrait tablet: photo on top, text below */
   @media (orientation: portrait) {
-    :root { --brand-h: 12dvh; }
+    :root { --brand-h: 13vh; }
     .frame { grid-template-columns: 1fr; grid-template-rows: 46% 54%; }
     .photo, .frame.flip .photo { order: -1; }
     .frame.nophoto { grid-template-rows: 1fr; }
     .text { padding: 5vmin 7vw; }
-    .line { font-size: clamp(28px, 6.4vw, 70px); }
+    .line { font-size: clamp(28px, 8.2vw, 80px); }
+    .wordmark .or { font-size: clamp(30px, 8vw, 80px); }
+    .wordmark .olivia { font-size: clamp(18px, 4.8vw, 50px); }
+    .wordmark .ortho { font-size: clamp(9px, 1.9vw, 20px); }
+    .place { font-size: clamp(13px, 3.2vw, 36px); }
     .kicker { font-size: clamp(15px, 2.8vw, 28px); }
   }
 </style>
@@ -185,13 +190,37 @@
 <script>
   const SECONDS = 12; // time each frame stays on screen
 
+  // shrink each headline until it fits its box (stops cut-off on short/wide screens)
+  function fitText() {
+    document.querySelectorAll('.text').forEach(box => {
+      const line = box.querySelector('.line');
+      const kicker = box.querySelector('.kicker');
+      line.style.fontSize = '';
+      if (kicker) kicker.style.fontSize = '';
+      const cs = getComputedStyle(box);
+      const maxH = box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      let size = parseFloat(getComputedStyle(line).fontSize);
+      const content = () => line.offsetHeight + (kicker ? kicker.offsetHeight + parseFloat(getComputedStyle(kicker).marginBottom) : 0);
+      let guard = 60;
+      while (content() > maxH && size > 14 && guard--) {
+        size *= 0.94;
+        line.style.fontSize = size + 'px';
+        if (kicker) kicker.style.fontSize = Math.max(12, size * 0.4) + 'px';
+      }
+    });
+  }
+  fitText();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitText);
+  window.addEventListener('resize', fitText);
+  window.addEventListener('orientationchange', fitText);
+
   const frames = Array.from(document.querySelectorAll('.frame'));
   let current = 0;
   frames[0].classList.add('active');
 
   // if a photo file is missing, drop to text only
   document.querySelectorAll('.photo img').forEach(img => {
-    img.addEventListener('error', () => img.closest('.frame').classList.add('nophoto'));
+    img.addEventListener('error', () => { img.closest('.frame').classList.add('nophoto'); fitText(); });
   });
 
   function next() {
