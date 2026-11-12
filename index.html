@@ -198,7 +198,7 @@
       line.style.fontSize = '';
       if (kicker) kicker.style.fontSize = '';
       const cs = getComputedStyle(box);
-      const maxH = box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      const maxH = (box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)) * 0.92;
       let size = parseFloat(getComputedStyle(line).fontSize);
       const content = () => line.offsetHeight + (kicker ? kicker.offsetHeight + parseFloat(getComputedStyle(kicker).marginBottom) : 0);
       let guard = 60;
@@ -210,7 +210,13 @@
     });
   }
   fitText();
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitText);
+  if (document.fonts) {
+    document.fonts.ready.then(fitText);
+    document.fonts.addEventListener('loadingdone', fitText);
+  }
+  window.addEventListener('load', fitText);
+  setTimeout(fitText, 800);
+  setTimeout(fitText, 3000);
   window.addEventListener('resize', fitText);
   window.addEventListener('orientationchange', fitText);
 
@@ -224,6 +230,7 @@
   });
 
   function next() {
+    fitText();
     const from = frames[current];
     const toIndex = (current + 1) % frames.length;
     const to = frames[toIndex];
